@@ -9,8 +9,9 @@ const logger = require('morgan');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const OIDCStrategy = require('passport-azure-ad').OIDCStrategy;
+const MongoStore = require('connect-mongo')(session);
 
-const allowedDomains = ["publicboard.ca", "student.publicboard.ca", "fseproject.onmicrosoft.com"];
+const allowedDomains = ["publicboard.ca", "student.publicboard.ca"];
 
 mongoose.connect('mongodb://localhost/vmcsc');
 let db = mongoose.connection;
@@ -72,7 +73,8 @@ app.use(session({
   secret: 'your_secret_value_here',
   resave: false,
   saveUninitialized: false,
-  unset: 'destroy'
+  unset: 'destroy',
+  store: new MongoStore({mongooseConnection: mongoose.connection})
 }));
 
 
@@ -90,54 +92,62 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.get('/', async function (req, res, next) {
-  if (req.user){
-    console.log(req.user.profile._json.name);
-    console.log(req.user.profile._json.preferred_username);
-    const name = req.user.profile._json.name;
-    const email = req.user.profile._json.preferred_username;
-    const domain = email.split("@")[1];
-    const discordId = req.session.discordId;
-    console.log(discordId);
-    if(!allowedDomains.includes(domain)){
-      next(createError("Invalid Email Address"));
-    }
-    else if(await discordUsers.find({email: email}).length > 0){
-      next(createError("Account already assigned"));
-    }
-    else if(discordId === undefined){
-      next(createError("Invalid Discord ID"));
+  try{
+    if (req.user){
+      const name = req.user.profile._json.name;
+      const email = req.user.profile._json.preferred_username;
+      const domain = email.split("@")[1];
+      const discordId = req.session.discordId;
+
+      if(!allowedDomains.includes(domain)){
+        next(createError("Invalid Email Address"));
+      }
+      else if(await discordUsers.find({email: email}).length > 0){
+        next(createError("Account already assigned"));
+      }
+      else if(discordId === undefined){
+        next(createError("Invalid Discord ID"));
+      }
+      else{
+        await discordUsers.create({
+          name: name,
+          discordId: discordId,
+          email: email
+        });
+        req.session.destroy(function(err){
+          req.logout();
+        });
+        res.status(200).send("Verified successfully, you may close this tab.");
+      }
     }
     else{
-      await discordUsers.create({
-        name: name,
-        discordId: discordId,
-        email: email
-      });
-      req.session.destroy(function(err){
-        req.logout();
-      });
-      res.status(200).send("Verified successfully, you may close this tab.");
+      next(createError("Not logged in"));
     }
   }
-  else{
-    next(createError("Not logged in"));
+  catch(err){
+    next(createError(err));
   }
 });
 
 app.get('/login/:discordId',
   async function  (req, res, next) {
-    const queryDb = await discordUsers.find({discordId: req.params.discordId});
-    if(queryDb.length > 0) next(createError("Already verified"));
-    else{
-      req.session.discordId = req.params.discordId;
-      passport.authenticate('azuread-openidconnect',
-        {
-          response: res,
-          prompt: 'login',
-          failureRedirect: '/',
-          successRedirect: '/'
-        }
-      )(req,res,next);
+    try{
+      const queryDb = await discordUsers.find({discordId: req.params.discordId});
+      if(queryDb.length > 0) next(createError("Already verified"));
+      else{
+        req.session.discordId = req.params.discordId;
+        passport.authenticate('azuread-openidconnect',
+          {
+            response: res,
+            prompt: 'login',
+            failureRedirect: '/',
+            successRedirect: '/'
+          }
+        )(req,res,next);
+      }
+    }
+    catch(err){
+      next(createError(err));
     }
   }
 );
