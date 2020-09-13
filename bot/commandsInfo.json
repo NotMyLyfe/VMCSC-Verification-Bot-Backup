@@ -1,0 +1,50 @@
+[
+    {
+        "command" : "help",
+        "description" : "Pretty self-explanatory, just gets you this list.",
+        "args" : 0,
+        "adminOnly" : false
+    },
+    {
+        "command" : "verify",
+        "description" : "Used to verify status of Discord users through Microsoft365",
+        "args" : 0,
+        "adminOnly" : false
+    },
+    {
+        "command" : "setPrefix",
+        "description" : "Changes the prefix that will trigger this bot",
+        "args" : 1,
+        "adminOnly" : true
+    },
+    {
+        "command" : "setVerifiedRole",
+        "description" : "Sets the role for which verified users receive",
+        "args" : 1,
+        "adminOnly" : true
+    },
+    {
+        "command": "addAdmin",
+        "description" : "Add roles to give administrator privileges over this bot",
+        "args" : -2,
+        "adminOnly" : true
+    },
+    {
+        "command" : "removeAdmin",
+        "description" : "Remove roles that have administrator privileges from this bot",
+        "args" : -2,
+        "adminOnly" : true
+    },
+    {
+        "command" : "setChannels",
+        "description" : "Set channels that this bot will accept messages in",
+        "args" : -2,
+        "adminOnly" : true
+    },
+    {
+        "command" : "removeChannels",
+        "description" : "Remove channels that this bot will accept messages in",
+        "args" : -2,
+        "adminOnly" : true
+    }
+]
