@@ -86,10 +86,15 @@ client.on('guildMemberAdd', async member =>{
     if(userInfo){
         member.send(`Welcome to ${member.guild.name}! Since you've already verified yourself with MasseyBot, no need to verify yourself again.`);
         const serverInfo = await discordServers.findOne({serverId : member.guild.id});
-        if(serverInfo && serverInfo.verifiedRole != "-1"){
-            member.roles.add(serverInfo.verifiedRole);
+        try{
+            member.setNickname(userInfo.name);
+            if(serverInfo && serverInfo.verifiedRole != "-1" || member.guild.roles.cache.find(r => r.id == serverInfo.verifiedRole != undefined)){
+                member.roles.add(serverInfo.verifiedRole);
+            }
         }
-        member.setNickname(userInfo.name);
+        catch(err){
+            console.log(err, member.guild.me.hasPermission('MANAGE_ROLES'));
+        }
     }
     else{
         member.send(`Welcome to ${member.guild.name}! To verify yourself, please click this link: ${redirectUrl}${member.id}`);
@@ -268,12 +273,17 @@ async function queryDb(){
             }
             const verifiedRole = details[0].verifiedRole;
             if(verifiedRole == "-1") continue;
+            if(value.roles.cache.find(r => r.id == verifiedRole) == undefined){
+                value.systemChannel.send("Verified role has been removed from the server, please update verified role.");
+                await discordServers.updateOne({serverId : key}, {verifiedRole: "-1"});
+                return;
+            }
             for(let [mKey, mValue] of value.members.cache){
                 const userDetails = users.filter(user => user.discordId == mKey);
                 if(userDetails.length == 0 || mValue._roles.includes(verifiedRole) || mValue.user.bot) continue;
                 try{
-                    mValue.roles.add(verifiedRole);
                     mValue.setNickname(userDetails.name);
+                    mValue.roles.add(verifiedRole);
                 }
                 catch(err){
                     console.log(err, value.me.hasPermission('MANAGE_ROLES'));
