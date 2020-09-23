@@ -1,67 +1,9 @@
-require('dotenv').config();
-
-const Discord = require('discord.js');
-const mongoose = require('mongoose');
-const client = new Discord.Client();
 const commandsAndInfo = require('./commandsInfo.json');
+const {discordServers, discordUsers} = require('./schema.js');
+const queryDb = require('./query.js');
+const client = require('./discordClient.js');
 
 const redirectUrl = "http://localhost:3000/login/"
-
-mongoose.connect('mongodb://localhost/vmcsc');
-let db = mongoose.connection;
-
-db.on('open', function(){
-    console.log('Connected to MongoDB');
-})
-
-db.on('error', function(err){
-    console.log(err);
-});
-
-let userSchema = mongoose.Schema({
-    name:{
-      type: String,
-      required: true
-    },
-    discordId: {
-      type: Number,
-      required: true
-    },
-    email: {
-      type: String,
-      required: true
-    }
-});
-
-let serverSchema = mongoose.Schema({
-    serverId:{
-        type: Number,
-        required: true
-    },
-    messagePrefix:{
-        type: String,
-        required: true
-    },
-    verifiedRole: {
-        type: String,
-        required: true
-    },
-    verificationChannels:{
-        type: [String],
-        required: true
-    },
-    administratorRoles: {
-        type: [String],
-        required: true
-    }
-})
-
-let discordUsers = mongoose.model('DiscordUser', userSchema);
-let discordServers = mongoose.model('DiscordServer', serverSchema);
-
-client.on('ready', () => {
-    console.log('Ready!');
-});
 
 client.on('guildCreate', async guild=>{
     let prefix = "--";
@@ -255,45 +197,4 @@ client.on('message', async msg => {
     }
 });
 
-async function queryDb(){
-    while(true){
-        const users = await discordUsers.find();
-        const servers = await discordServers.find();
-        for(let [key, value] of client.guilds.cache){
-            const details = servers.filter(server => server.serverId == key);
-            if(details.length == 0) {
-                await discordServers.create({
-                    serverId: key,
-                    messagePrefix: "--",
-                    verifiedRole: "-1",
-                    verificationChannels: [],
-                    administratorRoles: []
-                });
-                continue;
-            }
-            const verifiedRole = details[0].verifiedRole;
-            if(verifiedRole == "-1") continue;
-            if(value.roles.cache.find(r => r.id == verifiedRole) == undefined){
-                value.systemChannel.send("Verified role has been removed from the server, please update verified role.");
-                await discordServers.updateOne({serverId : key}, {verifiedRole: "-1"});
-                return;
-            }
-            for(let [mKey, mValue] of value.members.cache){
-                const userDetails = users.filter(user => user.discordId == mKey);
-                if(userDetails.length == 0 || mValue._roles.includes(verifiedRole) || mValue.user.bot) continue;
-                try{
-                    mValue.setNickname(userDetails.name);
-                    mValue.roles.add(verifiedRole);
-                }
-                catch(err){
-                    console.log(err, value.me.hasPermission('MANAGE_ROLES'));
-                }
-            }
-        }
-        await new Promise(resolve => setTimeout(resolve, 500));
-    }
-}
-
 queryDb();
-
-client.login(process.env.TOKEN);
