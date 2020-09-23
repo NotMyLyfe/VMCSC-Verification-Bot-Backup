@@ -15,7 +15,7 @@ module.exports = {
             commandInfo += '```'
             data.push(commandInfo);
         }
-        data.push('Need more help? Feel free to message me on Discord, my username is NotMyLyfe#3937');
+        data.push('Need more help? Feel free to message me on Discord, my username is `NotMyLyfe#3937`');
         data.push('Would like to see/contribute to this bot? This repo is available at https://github.com/NotMyLyfe/VMCSC-Verification-Bot');
         return message.author.send(data, {split: true})
             .then(() => {
