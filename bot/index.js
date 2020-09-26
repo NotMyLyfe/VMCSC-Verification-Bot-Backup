@@ -74,9 +74,7 @@ client.on('message', async msg => {
     }
     
     const commandObj = client.commands.get(command);
-
-    console.log(commandObj.adminOnly, !(msg.member.hasPermission('ADMINISTRATOR')), !serverInfo.administratorRoles.some(val => msg.member._roles.includes(val)));
-
+    
     if(commandObj.adminOnly && !(msg.member.hasPermission('ADMINISTRATOR')) && !serverInfo.administratorRoles.some(val => msg.member._roles.includes(val))){
         msg.reply('you do not have permission to access that command');
         return;
