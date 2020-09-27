@@ -28,7 +28,7 @@ async function queryDb(){
                 const userDetails = users.filter(user => user.discordId == mKey);
                 if(userDetails.length == 0 || mValue._roles.includes(verifiedRole) || mValue.user.bot) continue;
                 try{
-                    mValue.setNickname(userDetails.name);
+                    mValue.setNickname(userDetails[0].name);
                     mValue.roles.add(verifiedRole);
                 }
                 catch(err){
