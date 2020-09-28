@@ -22,9 +22,9 @@ client.on('guildCreate', async guild=>{
 
 client.on('guildMemberAdd', async member =>{
     const userInfo = await discordUsers.findOne({discordId : member.id});
+    const serverInfo = await discordServers.findOne({serverId : member.guild.id});
     if(userInfo){
         member.send(`Welcome to ${member.guild.name}! Since you've already verified yourself with MasseyBot, no need to verify yourself again.`);
-        const serverInfo = await discordServers.findOne({serverId : member.guild.id});
         try{
             member.setNickname(userInfo.name);
             if(serverInfo && serverInfo.verifiedRole != "-1" || member.guild.roles.cache.find(r => r.id == serverInfo.verifiedRole != undefined)){
@@ -36,7 +36,7 @@ client.on('guildMemberAdd', async member =>{
         }
     }
     else{
-        member.send(`Welcome to ${member.guild.name}! To verify yourself, please click this link: ${redirectUrl}${member.id}`);
+        member.send(`Welcome to ${member.guild.name}! Please verify yourself in the server by typing \`${serverInfo.messagePrefix}verify (your student ID) (Your first and last name)\``);
     }
 });
 
