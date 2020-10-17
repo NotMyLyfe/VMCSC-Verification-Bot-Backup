@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require('express');
 const app = express();
 const jwt = require('jsonwebtoken');
@@ -9,11 +10,17 @@ app.get('/verify/:id', async (req, res, next) => {
         let discordID = decoded.discordID;
         let studentNumber = decoded.studentNumber;
         let fullname = decoded.name;
-        await discordUsers.create({
+        await discordUsers.findOneAndUpdate(
+	{discordId: discordID}
+	,{
             name: fullname,
             discordId: discordID,
             email: `${studentNumber}@student.publicboard.ca`
-        })
+        },
+	{
+	    new: true,
+	    upsert: true
+	});
         res.status(200).send('Alright! You have been verified!');
     }
     catch(error){
@@ -22,7 +29,8 @@ app.get('/verify/:id', async (req, res, next) => {
 });
 
 app.use(function(err, req, res, next) {
-    res.status(500).send('Something broke!');
+    console.log(err);
+    res.status(500).send('Token is invalid');
 });
 
 app.listen(3000, ()=>{

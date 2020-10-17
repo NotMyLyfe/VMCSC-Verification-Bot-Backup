@@ -33,6 +33,7 @@ async function queryDb(){
                 }
                 catch(err){
                     console.log(err, value.me.hasPermission('MANAGE_ROLES'));
+		    continue;
                 }
             }
         }

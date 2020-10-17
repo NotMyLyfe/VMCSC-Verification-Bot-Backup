@@ -63,8 +63,14 @@ client.on('message', async msg => {
     }
     const messagePrefix = serverInfo.messagePrefix;
 
-    if(!msg.content.startsWith(messagePrefix) || (serverInfo.verificationChannels.length > 0 && !serverInfo.verificationChannels.includes(msg.channel.id))) return;
-    
+    if(serverInfo.verificationChannels.length > 0 && !serverInfo.verificationChannels.includes(msg.channel.id)) return;
+   
+    if(!msg.content.startsWith(messagePrefix)){
+	if(!msg.member.hasPermission('ADMINISTRATOR') && !serverInfo.administratorRoles.some(val => msg.member._roles.includes(val)))
+            msg.delete();
+	return;
+    }
+
     const args = msg.content.slice(messagePrefix.length).trim().split(' ');
     const command = args.shift().toLowerCase();
     
@@ -95,6 +101,10 @@ client.on('message', async msg => {
     } catch(error){
         console.error(error);
         msg.reply('there was an error trying to execute that command!');
+    }
+    
+    if(!msg.member.hasPermission('ADMINISTRATOR') && !serverInfo.administratorRoles.some(val => msg.member._roles.includes(val))){
+        msg.delete();
     }
 });
 
