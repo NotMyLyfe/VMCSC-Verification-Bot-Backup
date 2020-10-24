@@ -10,7 +10,7 @@ module.exports = {
             var commandInfo = '```\n';
             const command = commandData[1];
             commandInfo += `${command.name}\nDescription: ${command.description}\nAdmin only:${command.adminOnly}\n`;
-            if(commandInfo.args < 0) commandInfo += `Minimum arguments: ${command.args}`;
+            if(commandInfo.args >= 0) commandInfo += `Minimum arguments: ${command.args}`;
             else commandInfo += `Required arguments: ${command.args  * -1 - 1}`;
             commandInfo += '```'
             data.push(commandInfo);
