@@ -42,7 +42,31 @@ client.on('guildMemberAdd', async member =>{
 
 client.on('message', async msg => {
     if(msg.author.bot) return;
-    
+
+    if(msg.channel.type == 'dm'){
+        const args = msg.content.trim().split(' ');
+        const command = args.shift().toLowerCase();
+        try{
+            if(command.includes('help') || command.includes('verify')){
+                const commandObj = (command.includes('help')) ? client.commands.get('help') : client.commands.get('verify');
+                if(commandObj.args >= 0 && args.length != commandObj.args){
+                    msg.author.send(`\`${command}\` requires \`${commandObj.args}\` argument(s)`);
+                }
+                else{
+                    await commandObj.execute(msg, args);
+                }
+            }
+            else{
+                msg.author.send("That command is an invalid command.")
+            }
+        }
+        catch(err){
+            console.error(err);
+            msg.author.send('There was an error trying to excute that command!');
+        }
+        return;
+    }
+
     let serverInfo = await discordServers.findOne({serverId : msg.guild.id});
 
     if(!serverInfo){
@@ -75,24 +99,24 @@ client.on('message', async msg => {
     const command = args.shift().toLowerCase();
     
     if(!client.commands.has(command)){
-        msg.channel.send(`\`${messagePrefix}${command}\` is not a valid command, please refer to \`${messagePrefix}help\` for a list of commands`);
+        msg.member.send(`\`${messagePrefix}${command}\` is not a valid command, please refer to \`${messagePrefix}help\` for a list of commands`);
         return;
     }
     
     const commandObj = client.commands.get(command);
     
     if(commandObj.adminOnly && !(msg.member.hasPermission('ADMINISTRATOR')) && !serverInfo.administratorRoles.some(val => msg.member._roles.includes(val))){
-        msg.reply('you do not have permission to access that command');
+        msg.member.send('You do not have permission to access that command!');
         return;
     }
 
     if(commandObj.args >= 0 && args.length != commandObj.args){
-        msg.channel.send(`\`${messagePrefix}${command}\` requires \`${commandObj.args}\` argument(s)`);
+        msg.member.send(`\`${messagePrefix}${command}\` requires \`${commandObj.args}\` argument(s)`);
         return;
     }
 
     if(commandObj.args < 0 && args.length < commandObj.args * -1 - 1){
-        msg.channel.send(`\`${messagePrefix}${command}\` requires at least \`${commandObj.args * -1 - 1}\` argument(s)`);
+        msg.member.send(`\`${messagePrefix}${command}\` requires at least \`${commandObj.args * -1 - 1}\` argument(s)`);
         return;
     }
 
@@ -100,7 +124,7 @@ client.on('message', async msg => {
         await commandObj.execute(msg, args);
     } catch(error){
         console.error(error);
-        msg.reply('there was an error trying to execute that command!');
+        msg.member.send('There was an error trying to execute that command!');
     }
     
     if(!msg.member.hasPermission('ADMINISTRATOR') && !serverInfo.administratorRoles.some(val => msg.member._roles.includes(val))){
